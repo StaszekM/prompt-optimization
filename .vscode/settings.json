@@ -1,0 +1,12 @@
+{
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
+  },
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/iterative/dvcyaml-schema/master/schema.json": [
+      "dvc.yaml",
+      "**/dvc.yaml"
+    ]
+  }
+}

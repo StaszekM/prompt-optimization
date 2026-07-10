@@ -1,0 +1,7 @@
+stages:
+  create_examples:
+    cmd: python -m examples_creator
+    deps:
+      - data/reformulation_dataset.csv
+    outs:
+      - out/reformulation_examples.pkl

@@ -1,0 +1,14 @@
+schema: '2.0'
+stages:
+  create_examples:
+    cmd: python -m examples_creator
+    deps:
+    - path: data/reformulation_dataset.csv
+      hash: md5
+      md5: 4d31b6ac2912d378a25bcfabfabf84aa
+      size: 336616
+    outs:
+    - path: out/reformulation_examples.pkl
+      hash: md5
+      md5: 5aa5b2450109b85db9faea11616c1dbe
+      size: 1887
