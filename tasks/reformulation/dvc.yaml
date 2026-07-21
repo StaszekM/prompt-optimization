@@ -3,5 +3,12 @@ stages:
     cmd: python -m examples_creator
     deps:
       - data/reformulation_dataset.csv
+      - examples_creator.py
     outs:
+      - out/reformulation_examples.pkl
+  evaluate:
+    cmd: PYTHONPATH=../.. python -m evaluate
+    deps:
+      - evaluate.py
+      - ../../src/clarin_lm.py
       - out/reformulation_examples.pkl

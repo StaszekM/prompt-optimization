@@ -9,10 +9,16 @@ dependencies = [
     "dvc>=3.67.1",
     "ipykernel>=7.3.0",
     "pandas>=3.0.3",
+    "pl-core-news-lg",
     "snakeviz>=2.2.2",
+    "spacy>=3.8.14",
     "wikipedia>=1.4.0",
     "wikipedia-api>=0.15.0",
 ]
 
 [tool.pyright]
 reportMissingTypeStubs = false
+
+[tool.uv.sources]
+pl-core-news-lg = { url = "https://github.com/explosion/spacy-models/releases/download/pl_core_news_lg-3.8.0/pl_core_news_lg-3.8.0-py3-none-any.whl" }
+

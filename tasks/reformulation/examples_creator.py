@@ -16,7 +16,7 @@ if __name__ == "__main__":
     examples: list[Example] = []
 
     df = pd.read_csv(input_location)
-    reader = list(df.iterrows())[:1]
+    reader = list(df.iterrows())
     for idx, row in reader:
         message_history = [
             {"role": "user", "content": row["query"]},

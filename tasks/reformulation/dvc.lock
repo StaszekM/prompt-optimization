@@ -7,8 +7,27 @@ stages:
       hash: md5
       md5: 4d31b6ac2912d378a25bcfabfabf84aa
       size: 336616
+    - path: examples_creator.py
+      hash: md5
+      md5: aabd565dc6ba0469a286c766e091b0f4
+      size: 1111
     outs:
     - path: out/reformulation_examples.pkl
       hash: md5
-      md5: 5aa5b2450109b85db9faea11616c1dbe
-      size: 1887
+      md5: 15a25eaeb35eae65372edd816e16a485
+      size: 15706
+  evaluate:
+    cmd: PYTHONPATH=../.. python -m evaluate
+    deps:
+    - path: ../../src/clarin_lm.py
+      hash: md5
+      md5: 3d43a9abd74ab85734afab5533df2ae6
+      size: 454
+    - path: evaluate.py
+      hash: md5
+      md5: b4e513cf803a1c3fae07cef3023fc94b
+      size: 996
+    - path: out/reformulation_examples.pkl
+      hash: md5
+      md5: 15a25eaeb35eae65372edd816e16a485
+      size: 15706
