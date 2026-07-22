@@ -1,1 +1,5 @@
 /reformulation_examples.pkl
+/gepa_logs
+/reform_bot_optimized.json
+/mlflow.db
+/eval_results.csv

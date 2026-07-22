@@ -6,9 +6,22 @@ stages:
       - examples_creator.py
     outs:
       - out/reformulation_examples.pkl
+  run_optimization:
+    cmd: PYTHONPATH=../.. python -m optimize
+    deps:
+      - optimize.py
+      - ../../src/clarin_lm.py
+      - out/reformulation_examples.pkl
+    outs:
+      - out/gepa_logs/:
+          persist: true
+      - out/reform_bot_optimized.json
   evaluate:
     cmd: PYTHONPATH=../.. python -m evaluate
     deps:
       - evaluate.py
       - ../../src/clarin_lm.py
       - out/reformulation_examples.pkl
+      - out/reform_bot_optimized.json
+    outs:
+      - out/eval_results.csv

@@ -25,9 +25,43 @@ stages:
       size: 454
     - path: evaluate.py
       hash: md5
-      md5: b4e513cf803a1c3fae07cef3023fc94b
-      size: 996
+      md5: bbd0910c04b4c8dbe35e0e521b24db4b
+      size: 1051
+    - path: out/reform_bot_optimized.json
+      hash: md5
+      md5: 7738a15ebedd2a69d1e081593b90a5b2
+      size: 4034
     - path: out/reformulation_examples.pkl
       hash: md5
       md5: 15a25eaeb35eae65372edd816e16a485
       size: 15706
+    outs:
+    - path: out/eval_results.csv
+      hash: md5
+      md5: f35bab7819dcf943453d1ce10bf08daa
+      size: 41286
+  run_optimization:
+    cmd: PYTHONPATH=../.. python -m optimize
+    deps:
+    - path: ../../src/clarin_lm.py
+      hash: md5
+      md5: 3d43a9abd74ab85734afab5533df2ae6
+      size: 454
+    - path: optimize.py
+      hash: md5
+      md5: e838fc83eeb3b56f892313619278f2bd
+      size: 1571
+    - path: out/reformulation_examples.pkl
+      hash: md5
+      md5: 15a25eaeb35eae65372edd816e16a485
+      size: 15706
+    outs:
+    - path: out/gepa_logs/
+      hash: md5
+      md5: d7d2d3b3b39b78f8d2707170f7bcb97d.dir
+      size: 46474
+      nfiles: 25
+    - path: out/reform_bot_optimized.json
+      hash: md5
+      md5: 7738a15ebedd2a69d1e081593b90a5b2
+      size: 4034

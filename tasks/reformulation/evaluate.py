@@ -26,8 +26,9 @@ if __name__ == "__main__":
     )
 
     reformulator = VanillaReformulator()
+    reformulator.load("./out/reform_bot_optimized.json")
 
-    model = create_clarin_lm(model_name="wcss-gpt-oss-20b")
+    model = create_clarin_lm(model_name="gemma-4-31b-it")
     with dspy.context(lm=model, provide_traceback=True):
         score = evaluate(reformulator)
 
