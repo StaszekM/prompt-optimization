@@ -1,0 +1,5 @@
+outs:
+- md5: daa261851b7ca1d167383b0fecf62e22
+  size: 403796
+  hash: md5
+  path: sessions.csv
