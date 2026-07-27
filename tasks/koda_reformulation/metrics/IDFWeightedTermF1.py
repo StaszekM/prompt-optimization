@@ -11,6 +11,63 @@ from spacy.tokens import Token
 
 
 class IDFMetric(ABC):
+    r"""
+    Base class for metrics that compare texts through IDF-weighted content
+    lemmas.
+
+    This class does not define a metric by itself. It prepares and stores the
+    shared state used by concrete metrics:
+
+    - `self._nlp`: spaCy pipeline used for tokenization, part-of-speech tagging,
+      stop-word detection, and lemmatization.
+    - `self._lemma_weight_lut`: lookup table mapping each observed content lemma
+      to its IDF weight.
+    - `self._oov_weight`: fallback weight assigned to out-of-vocabulary lemmas.
+
+    ## Term extraction and IDF weights
+
+    Each input text is represented as a set of content lemmas:
+
+    $$T(x) = \{ \operatorname{lemma}(u) \mid u \in x,\ \operatorname{is\_term}(u) \}$$
+
+    `is_term` keeps tokens whose part-of-speech tag is one of `NOUN`, `PROPN`,
+    `ADJ`, `VERB`, or `ADV`, and removes punctuation, stop words, and
+    numeric-like tokens.
+
+    The constructor builds the IDF lookup table from `gold_questions_list`. Each
+    gold question is treated as one document. For a lemma $t$, document
+    frequency is:
+
+    $$\operatorname{df}(t) = \sum_{i=1}^{N} \mathbf{1}[t \in T(g_i)]$$
+
+    The stored weight is the smoothed inverse document frequency:
+
+    $$w(t) = \log\left(\frac{N + 1}{\operatorname{df}(t) + 1}\right) + 1$$
+
+    where $N$ is the number of gold questions.
+
+    Lemmas absent from `self._lemma_weight_lut` receive the OOV fallback:
+
+    $$w_{\mathrm{OOV}} = P_{95}(w(t) \mid t \in V)$$
+
+    where $V$ is the vocabulary of content lemmas observed in
+    `gold_questions_list`. If the vocabulary is empty, `self._oov_weight` is set
+    to `1.0`.
+
+    ## Parameters
+
+    - `gold_questions_list`:
+      Reference questions used to estimate document frequencies and IDF weights.
+
+    - `nlp`:
+      spaCy language pipeline used by all text-processing helpers.
+
+    ## Notes
+
+    Subclasses are expected to implement `__call__` and define how the weighted
+    lemma sets are compared.
+    """
+
     def __init__(self, gold_questions_list: list[str], nlp: Language):
         self._nlp = nlp
         self._lemma_weight_lut = self._construct_lemma_weight_lut(gold_questions_list)
@@ -283,6 +340,89 @@ class IDFWeightedTermF1(IDFMetric):
 
 
 class ContextCarryoverRecall(IDFMetric):
+    r"""
+    Compute how well a predicted standalone paraphrase carries over important
+    contextual terms that were added by the gold standalone paraphrase.
+
+    This metric is useful when the model rewrites a conversational follow-up
+    question into a complete query. It does not compare all terms from the gold
+    paraphrase. Instead, it focuses only on terms that are present in the gold
+    paraphrase but absent from the last user question. These terms represent
+    information that should be recovered from conversation context.
+
+    ## Term sets
+
+    For a predicted paraphrase, a gold paraphrase, and the last user question,
+    define:
+
+    $$A = T(\text{predicted})$$
+
+    $$G = T(\text{expected})$$
+
+    $$U = T(\text{last\_user\_question})$$
+
+    The set of context terms that should be carried over is:
+
+    $$K = G \setminus U$$
+
+    The set of carried-over context terms found in the prediction is:
+
+    $$M = A \cap K$$
+
+    Here, $T(x)$ is the content-lemma extractor inherited from `IDFMetric`.
+
+    ## IDF weights
+
+    Term weights are inherited from `IDFMetric`. For a lemma $t$ observed in the
+    gold-question corpus:
+
+    $$w(t) = \log\left(\frac{N + 1}{\operatorname{df}(t) + 1}\right) + 1$$
+
+    Out-of-vocabulary lemmas receive the shared fallback weight
+    $w_{\mathrm{OOV}}$.
+
+    ## Score calculation
+
+    The total weight of required context terms is:
+
+    $$W_K = \sum_{t \in K} w(t)$$
+
+    The total weight of matched context terms is:
+
+    $$W_M = \sum_{t \in M} w(t)$$
+
+    The score is an IDF-weighted recall over context-only terms:
+
+    $$R_{\mathrm{context}} = \frac{W_M}{W_K}$$
+
+    If there are no context terms to carry over, or their total weight is zero,
+    the metric returns `1.0`.
+
+    ## Parameters
+
+    - `gold_questions_list`:
+      Reference questions used to construct the IDF lookup table.
+
+    - `nlp`:
+      spaCy language pipeline used for tokenization, part-of-speech tagging,
+      stop-word detection, and lemmatization.
+
+    ## Returns
+
+    A callable metric object.
+
+    Calling the object with `predicted`, `expected`, and `last_user_question`
+    returns a `(score, feedback)` tuple:
+
+    - `score`:
+      IDF-weighted recall of context terms. The value is in the range
+      `[0.0, 1.0]` when all IDF weights are non-negative.
+
+    - `feedback`:
+      Textual diagnostic message listing context terms from the gold paraphrase
+      that were not recovered in the prediction.
+    """
+
     def __init__(self, *args: Any, **kwds: Any) -> None:
         super().__init__(*args, **kwds)
 
