@@ -1,0 +1,34 @@
+stages:
+  create_folders:
+    cmd: mkdir -p out
+  create_examples:
+    cmd: python -m examples_creator
+    deps:
+      - data/convos.jsonl
+      - data/rag_paraphrase_eval.jsonl
+      - examples_creator.py
+    outs:
+      - out/reformulation_examples.pkl
+      - out/reformulation_eval.pkl
+  evaluate:
+    cmd: PYTHONPATH=../.. python -m evaluate --variant before
+    deps:
+      - evaluate.py
+      - ../../src/clarin_lm.py
+      - out/reformulation_eval.pkl
+      - data/convos.jsonl
+      - data/rag_paraphrase_eval.jsonl
+    outs:
+      - out/eval_results_before.csv
+      - out/mlflow.db:
+          persist: true
+  # run_optimization:
+  #   cmd: PYTHONPATH=../.. python -m optimize
+  #   deps:
+  #     - optimize.py
+  #     - ../../src/clarin_lm.py
+  #     - out/reformulation_examples.pkl
+  #   outs:
+  #     - out/gepa_logs/:
+  #         persist: true
+  #     - out/reform_bot_optimized.json
