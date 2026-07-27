@@ -23,8 +23,6 @@ stages:
       - data/rag_paraphrase_eval.jsonl
     outs:
       - out/eval_results_before.csv
-      - out/mlflow.db:
-          persist: true
     params:
       - params.yaml:
         - generator_llm.params
@@ -36,10 +34,7 @@ stages:
       - out/reformulation_eval.pkl
       - data/convos.jsonl
       - data/rag_paraphrase_eval.jsonl
-      - out/mlflow.db
     outs:
-      - out/gepa_logs/:
-          persist: true
       - out/reform_bot_optimized.json
     params:
       - params.yaml:
@@ -54,6 +49,5 @@ stages:
       - data/convos.jsonl
       - data/rag_paraphrase_eval.jsonl
       - out/reform_bot_optimized.json
-      - out/mlflow.db
     outs:
       - out/eval_results_after.csv

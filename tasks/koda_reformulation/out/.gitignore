@@ -1,7 +1,6 @@
 /reformulation_examples.pkl
 /reformulation_eval.pkl
 /eval_results_before.csv
-/mlflow.db
 /gepa_logs
 /reform_bot_optimized.json
 /eval_results_after.csv

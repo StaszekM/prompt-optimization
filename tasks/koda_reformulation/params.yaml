@@ -24,3 +24,6 @@ reflection_llm:
 
 gepa_config:
   max_metric_calls: 10
+
+mlflow_tracking_host: localhost
+mlflow_tracking_port: 5000
