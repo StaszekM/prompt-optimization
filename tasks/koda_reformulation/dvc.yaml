@@ -10,11 +10,14 @@ stages:
     outs:
       - out/reformulation_examples.pkl
       - out/reformulation_eval.pkl
+    params:
+      - params.yaml:
+        - examples_creator.random_state
+        - examples_creator.test_size
   evaluate:
     cmd: PYTHONPATH=../.. python -m evaluate --variant before
     deps:
       - evaluate.py
-      - ../../src/clarin_lm.py
       - out/reformulation_eval.pkl
       - data/convos.jsonl
       - data/rag_paraphrase_eval.jsonl
@@ -22,11 +25,13 @@ stages:
       - out/eval_results_before.csv
       - out/mlflow.db:
           persist: true
+    params:
+      - params.yaml:
+        - generator_llm.params
   run_optimization:
     cmd: PYTHONPATH=../.. python -m optimize
     deps:
       - optimize.py
-      - ../../src/clarin_lm.py
       - out/reformulation_examples.pkl
       - out/reformulation_eval.pkl
       - data/convos.jsonl
@@ -36,11 +41,15 @@ stages:
       - out/gepa_logs/:
           persist: true
       - out/reform_bot_optimized.json
+    params:
+      - params.yaml:
+        - generator_llm.params
+        - reflection_llm.params
+        - gepa_config
   evaluate-after:
     cmd: PYTHONPATH=../.. python -m evaluate --variant after
     deps:
       - evaluate.py
-      - ../../src/clarin_lm.py
       - out/reformulation_eval.pkl
       - data/convos.jsonl
       - data/rag_paraphrase_eval.jsonl

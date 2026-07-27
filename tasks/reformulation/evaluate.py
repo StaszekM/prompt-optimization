@@ -4,7 +4,7 @@ import pickle
 import dspy
 from evaluators.word_coverage_score import word_coverage_metric
 
-from src.clarin_lm import create_clarin_lm
+from lm.clarin_lm import create_clarin_lm
 from tasks.reformulation.reformulators.reformulator import VanillaReformulator
 
 if __name__ == "__main__":

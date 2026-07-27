@@ -15,24 +15,24 @@ stages:
       size: 110858
     - path: examples_creator.py
       hash: md5
-      md5: 07250f37668350b7767bf27001e0a87f
-      size: 2440
+      md5: e393bcea25305e77ef5d20a0c854a974
+      size: 2681
+    params:
+      params.yaml:
+        examples_creator.random_state: 34
+        examples_creator.test_size: 0.3
     outs:
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: ce8184213da949d233c4f8815fabc3e6
+      md5: 4facdd769dbd5f69bdc04451176c5c47
       size: 29181
     - path: out/reformulation_examples.pkl
       hash: md5
-      md5: 2b1cdece7793d7591ae076c43961e941
+      md5: b7b7f72b0b831e8cd86602c167e09524
       size: 320853
   evaluate:
     cmd: PYTHONPATH=../.. python -m evaluate --variant before
     deps:
-    - path: ../../src/clarin_lm.py
-      hash: md5
-      md5: 3d43a9abd74ab85734afab5533df2ae6
-      size: 454
     - path: data/convos.jsonl
       hash: md5
       md5: 07454d67b2a2f1cfc3e957c6035d7611
@@ -43,28 +43,30 @@ stages:
       size: 110858
     - path: evaluate.py
       hash: md5
-      md5: d75beea4fe2c3ab024edaf7076e5cbac
-      size: 2028
+      md5: 3b0dfd76ec250f1ac4cfdaa060f9404f
+      size: 2196
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: ce8184213da949d233c4f8815fabc3e6
+      md5: 4facdd769dbd5f69bdc04451176c5c47
       size: 29181
+    params:
+      params.yaml:
+        generator_llm.params:
+          model_name: gemma-4-31b-it
+          temperature: 0.5
+          max_tokens: 8000
     outs:
     - path: out/eval_results_before.csv
       hash: md5
-      md5: b638c0eb042eb4e21df835a362680772
-      size: 46314
+      md5: a864bbba9ab29ad1d8971099ec00e34c
+      size: 46564
     - path: out/mlflow.db
       hash: md5
-      md5: f4f57221f97463818896d5efa39e1370
-      size: 4026368
+      md5: 70c4c959b485b8bccf0744d57691e956
+      size: 5656576
   run_optimization:
     cmd: PYTHONPATH=../.. python -m optimize
     deps:
-    - path: ../../src/clarin_lm.py
-      hash: md5
-      md5: 3d43a9abd74ab85734afab5533df2ae6
-      size: 454
     - path: data/convos.jsonl
       hash: md5
       md5: 07454d67b2a2f1cfc3e957c6035d7611
@@ -75,20 +77,32 @@ stages:
       size: 110858
     - path: optimize.py
       hash: md5
-      md5: abd0c36cc4d927e61eeb67f53c748081
-      size: 1815
+      md5: c13994bf9f9d908cb0702132cd947977
+      size: 1926
     - path: out/mlflow.db
       hash: md5
-      md5: 2aef6c06f24ad8fee0cf41a0475152d1
-      size: 10895360
+      md5: 934c749bd248c7b35f9e657373cfc8f0
+      size: 5660672
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: ce8184213da949d233c4f8815fabc3e6
+      md5: 4facdd769dbd5f69bdc04451176c5c47
       size: 29181
     - path: out/reformulation_examples.pkl
       hash: md5
-      md5: 2b1cdece7793d7591ae076c43961e941
+      md5: b7b7f72b0b831e8cd86602c167e09524
       size: 320853
+    params:
+      params.yaml:
+        generator_llm.params:
+          model_name: gemma-4-31b-it
+          temperature: 0.5
+          max_tokens: 8000
+        gepa_config:
+          max_metric_calls: 10
+        reflection_llm.params:
+          model_name: gpt-4o
+          temperature: 0.5
+          max_tokens: 8000
     outs:
     - path: out/gepa_logs/
       hash: md5
@@ -102,10 +116,6 @@ stages:
   evaluate-after:
     cmd: PYTHONPATH=../.. python -m evaluate --variant after
     deps:
-    - path: ../../src/clarin_lm.py
-      hash: md5
-      md5: 3d43a9abd74ab85734afab5533df2ae6
-      size: 454
     - path: data/convos.jsonl
       hash: md5
       md5: 07454d67b2a2f1cfc3e957c6035d7611
@@ -116,22 +126,22 @@ stages:
       size: 110858
     - path: evaluate.py
       hash: md5
-      md5: d75beea4fe2c3ab024edaf7076e5cbac
-      size: 2028
+      md5: 3b0dfd76ec250f1ac4cfdaa060f9404f
+      size: 2196
     - path: out/mlflow.db
       hash: md5
-      md5: ae5488b247cdcfcb22a6317ab02b257e
-      size: 12005376
+      md5: a072cbc0bec994eaf1cc06c8c32b0b6a
+      size: 6856704
     - path: out/reform_bot_optimized.json
       hash: md5
       md5: edb8b1c90413652dca0b015411ea1769
       size: 3679
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: ce8184213da949d233c4f8815fabc3e6
+      md5: 4facdd769dbd5f69bdc04451176c5c47
       size: 29181
     outs:
     - path: out/eval_results_after.csv
       hash: md5
-      md5: 2b0c9b4d8d9e55c469d1ccf2f6493483
-      size: 46269
+      md5: 88a0f75eaeade5bb89d7f7a318c566ce
+      size: 45982

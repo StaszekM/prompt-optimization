@@ -1,0 +1,26 @@
+examples_creator:
+  random_state: 34
+  test_size: 0.3
+
+generator_llm:
+  kind: clarin
+  params:
+    model_name: "gemma-4-31b-it"
+    temperature: 0.5
+    max_tokens: 8000
+  untracked_params:
+    cache: false
+    num_retries: 5
+
+reflection_llm:
+  kind: clarin
+  params:
+    model_name: "gpt-4o"
+    temperature: 0.5
+    max_tokens: 8000
+  untracked_params:
+    cache: false
+    num_retries: 5
+
+gepa_config:
+  max_metric_calls: 10

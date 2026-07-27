@@ -2,6 +2,8 @@ import ast
 import os
 import pickle
 
+import dvc
+import dvc.api
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -37,6 +39,8 @@ def to_examples(reader):
 if __name__ == "__main__":
     from dspy.primitives.example import Example
 
+    params = dvc.api.params_show("./params.yaml")["examples_creator"]
+
     input_location_train = os.path.join(
         os.path.dirname(__file__), "data", "convos.jsonl"
     )
@@ -61,7 +65,7 @@ if __name__ == "__main__":
 
     # df eval is so large that it would be beneficial to shrink it and extend training set
     df_eval_subsample_training, df_eval_subsample_test = train_test_split(
-        df_eval, test_size=0.3, random_state=34
+        df_eval, test_size=params["test_size"], random_state=params["random_state"]
     )
 
     train_reader = list(df_train.iterrows()) + list(
@@ -77,3 +81,7 @@ if __name__ == "__main__":
 
     with open(output_location_eval, "wb") as output_file:
         pickle.dump(examples_val, output_file)
+
+    print(
+        f"Created {len(train_reader)} train examples and {len(val_reader)} val examples."
+    )

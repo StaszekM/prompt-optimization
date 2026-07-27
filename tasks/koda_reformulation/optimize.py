@@ -2,10 +2,12 @@ import os
 import pickle
 
 import dspy
+import dvc
+import dvc.api
 import mlflow
 from dspy.primitives import Example
 
-from src.clarin_lm import create_clarin_lm
+from src.create_lm_from_config import create_lm_from_config
 from tasks.koda_reformulation.evaluate import AggregatedMetric
 from tasks.reformulation.reformulators.reformulator import VanillaReformulator
 
@@ -28,10 +30,11 @@ def list_splitter(list_to_split, ratio):
 
 
 def main():
-    backbone_lm = create_clarin_lm(model_name="gemma-4-31b-it")
+    params = dvc.api.params_show("./params.yaml")
+    backbone_lm = create_lm_from_config(params["generator_llm"])
     dspy.configure(lm=backbone_lm)
 
-    reflection_lm = create_clarin_lm(model_name="gpt-4o")
+    reflection_lm = create_lm_from_config(params["reflection_llm"])
 
     metric = AggregatedMetric(
         train_location="./data/convos.jsonl",
@@ -41,9 +44,9 @@ def main():
     optimizer = dspy.GEPA(
         metric=metric,
         reflection_lm=reflection_lm,
-        max_full_evals=1,
         num_threads=2,
         log_dir="./out/gepa_logs",
+        **params["gepa_config"],
     )
 
     bot = VanillaReformulator()

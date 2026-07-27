@@ -3,9 +3,11 @@ import pickle
 from typing import Literal
 
 import dspy
+import dvc
+import dvc.api
 import mlflow
 
-from src.clarin_lm import create_clarin_lm
+from src.create_lm_from_config import create_lm_from_config
 from tasks.koda_reformulation.metrics.aggregated_metric import AggregatedMetric
 from tasks.reformulation.reformulators.reformulator import VanillaReformulator
 
@@ -24,6 +26,7 @@ evaluation_variant = Literal["before", "after"]
 
 
 def main(variant: evaluation_variant):
+    params = dvc.api.params_show("./params.yaml")
     examples: list[dspy.Example]
     examples_location = os.path.join(
         os.path.dirname(__file__), "out/reformulation_eval.pkl"
@@ -52,7 +55,9 @@ def main(variant: evaluation_variant):
     if variant == "after":
         reformulator.load("./out/reform_bot_optimized.json")
 
-    model = create_clarin_lm(model_name="gemma-4-31b-it")
+    model_config = params["generator_llm"]
+    print(f"Using model: {model_config}")
+    model = create_lm_from_config(model_config)
     with dspy.context(lm=model, provide_traceback=True):
         evaluate(reformulator, callback_metadata={"metric_key": f"eval-{variant}"})
 
