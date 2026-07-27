@@ -10,6 +10,7 @@ dependencies = [
     "ipykernel>=7.3.0",
     "mlflow>=3.0.0",
     "pandas>=2.3.3",
+    "pdoc>=16.0.0",
     "pl-core-news-lg",
     "seaborn>=0.13.2",
     "snakeviz>=2.2.2",
