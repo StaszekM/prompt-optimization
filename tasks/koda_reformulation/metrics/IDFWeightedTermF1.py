@@ -1,4 +1,5 @@
 import math
+from abc import ABC
 from typing import Any
 
 import numpy as np
@@ -9,7 +10,65 @@ from spacy.ml import Doc
 from spacy.tokens import Token
 
 
-class IDFWeightedTermF1:
+class IDFMetric(ABC):
+    def __init__(self, gold_questions_list: list[str], nlp: Language):
+        self._nlp = nlp
+        self._lemma_weight_lut = self._construct_lemma_weight_lut(gold_questions_list)
+        if len(self._lemma_weight_lut) == 0:
+            self._oov_weight = 1.0
+        else:
+            self._oov_weight = float(
+                np.percentile(self._lemma_weight_lut.to_numpy(), 95)
+            )
+
+    def _construct_lemma_weight_lut(self, gold_questions_list: list[str]) -> Series:
+        """Returns Pandas series with index `lemma` (lemma) and value `idf` (IDF for lemma, calculated for entire `gold_questions_list`)"""
+        docs = [doc for doc in self._nlp.pipe(gold_questions_list)]
+
+        lemmas_per_doc: list[set[str]] = [self._lemmatize_terms(doc) for doc in docs]
+        lemmas_total: set[str] = set().union(*lemmas_per_doc)
+
+        n_docs = len(gold_questions_list)
+
+        lemmas_df = pd.DataFrame(lemmas_total, columns=["lemma"])
+        lemmas_df["df"] = lemmas_df["lemma"].apply(
+            lambda l: sum(l in lemmas_set for lemmas_set in lemmas_per_doc)
+        )
+        lemmas_df["idf"] = lemmas_df["df"].apply(
+            lambda df: math.log((n_docs + 1) / (df + 1)) + 1
+        )
+
+        return lemmas_df.set_index("lemma")["idf"]
+
+    def _lemmatize_terms(self, doc: Doc | str):
+        if isinstance(doc, str):
+            doc = self._nlp(doc)
+        return {token.lemma_ for token in doc if self.is_term(token)}
+
+    def _get_weight(self, lemma: str) -> float:
+        """Gets the lemma weight with fallback to OOV weight"""
+        if lemma in self._lemma_weight_lut.index:
+            return float(self._lemma_weight_lut.loc[lemma])
+        return self._oov_weight
+
+    def _sum_weights(self, lemmas: set[str]) -> float:
+        return float(sum(self._get_weight(lemma) for lemma in lemmas))
+
+    @staticmethod
+    def is_term(token: Token):
+        if token.is_punct:
+            return False
+
+        if token.is_stop:
+            return False
+
+        if token.like_num:
+            return False
+
+        return token.pos_ in ["NOUN", "PROPN", "ADJ", "VERB", "ADV"]
+
+
+class IDFWeightedTermF1(IDFMetric):
     r"""
     Compute an IDF-weighted term-level F1 score between a predicted query and a
     gold query.
@@ -154,35 +213,9 @@ class IDFWeightedTermF1:
     """
 
     def __init__(self, gold_questions_list: list[str], nlp: Language):
-        self._nlp = nlp
-        self._lemma_weight_lut = self._construct_lemma_weight_lut(gold_questions_list)
-        if len(self._lemma_weight_lut) == 0:
-            self._oov_weight = 1.0
-        else:
-            self._oov_weight = float(
-                np.percentile(self._lemma_weight_lut.to_numpy(), 95)
-            )
+        super().__init__(gold_questions_list=gold_questions_list, nlp=nlp)
 
-    def _construct_lemma_weight_lut(self, gold_questions_list: list[str]) -> Series:
-        """Returns Pandas series with index `lemma` (lemma) and value `idf` (IDF for lemma, calculated for entire `gold_questions_list`)"""
-        docs = [doc for doc in self._nlp.pipe(gold_questions_list)]
-
-        lemmas_per_doc: list[set[str]] = [self._lemmatize_terms(doc) for doc in docs]
-        lemmas_total: set[str] = set().union(*lemmas_per_doc)
-
-        n_docs = len(gold_questions_list)
-
-        lemmas_df = pd.DataFrame(lemmas_total, columns=["lemma"])
-        lemmas_df["df"] = lemmas_df["lemma"].apply(
-            lambda l: sum(l in lemmas_set for lemmas_set in lemmas_per_doc)
-        )
-        lemmas_df["idf"] = lemmas_df["df"].apply(
-            lambda df: math.log((n_docs + 1) / (df + 1)) + 1
-        )
-
-        return lemmas_df.set_index("lemma")["idf"]
-
-    def __call__(self, predicted: str, expected: str) -> Any:
+    def __call__(self, predicted: str, expected: str) -> tuple[float, str]:
 
         predicted_lemmatized = self._lemmatize_terms(predicted)
         expected_lemmatized = self._lemmatize_terms(expected)
@@ -227,33 +260,6 @@ class IDFWeightedTermF1:
 
         return float(score), feedback_str
 
-    def _lemmatize_terms(self, doc: Doc | str):
-        if isinstance(doc, str):
-            doc = self._nlp(doc)
-        return {token.lemma_ for token in doc if self.is_term(token)}
-
-    @staticmethod
-    def is_term(token: Token):
-        if token.is_punct:
-            return False
-
-        if token.is_stop:
-            return False
-
-        if token.like_num:
-            return False
-
-        return token.pos_ in ["NOUN", "PROPN", "ADJ", "VERB", "ADV"]
-
-    def _sum_weights(self, lemmas: set[str]) -> float:
-        return float(sum(self._get_weight(lemma) for lemma in lemmas))
-
-    def _get_weight(self, lemma: str) -> float:
-        """Gets the lemma weight with fallback to OOV weight"""
-        if lemma in self._lemma_weight_lut.index:
-            return float(self._lemma_weight_lut.loc[lemma])
-        return self._oov_weight
-
     def _format_terms_by_weight(self, terms: set[str], limit: int = 10) -> str:
         sorted_terms = sorted(terms, key=self._get_weight, reverse=True)
         limited_terms = sorted_terms[:limit]
@@ -274,3 +280,41 @@ class IDFWeightedTermF1:
             suffix = f" oraz {len(sorted_terms) - limit} więcej"
 
         return ", ".join(formatted_groups) + suffix
+
+
+class ContextCarryoverRecall(IDFMetric):
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        super().__init__(*args, **kwds)
+
+    def __call__(
+        self, predicted: str, expected: str, last_user_question: str
+    ) -> tuple[float, str]:
+        predicted_lemmatized = self._lemmatize_terms(predicted)
+        expected_lemmatized = self._lemmatize_terms(expected)
+        last_user_question_lemmatized = self._lemmatize_terms(last_user_question)
+
+        context_terms = expected_lemmatized - last_user_question_lemmatized
+        context_terms_idf_sum = self._sum_weights(context_terms)
+
+        matching_terms = predicted_lemmatized.intersection(context_terms)
+        matching_terms_idf_sum = self._sum_weights(matching_terms)
+
+        if len(context_terms) == 0 or context_terms_idf_sum == 0.0:
+            return (
+                1.0,
+                "Brak ważnych terminów do przeniesienia między ostatnim pytaniem użytkownika a parafrazą.",
+            )
+
+        metric_value = matching_terms_idf_sum / context_terms_idf_sum
+
+        missing_context_terms = context_terms - matching_terms
+
+        if len(missing_context_terms):
+            formatted_missing_context_terms = ", ".join(
+                f'"{x}"' for x in missing_context_terms
+            )
+            feedback = f"Parafraza nie dodaje ważnych terminów do ostatniego pytania użytkownika. Brakuje: {formatted_missing_context_terms}"
+        else:
+            feedback = "Nie brakuje żadnych ważnych terminów, które należy dodać do ostatniego pytania użytkownika"
+
+        return metric_value, feedback
