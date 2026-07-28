@@ -8,6 +8,7 @@ dependencies = [
     "debugpy>=1.8.21",
     "dspy>=3.2.1",
     "dvc>=3.67.1",
+    "dvc-s3>=3.3.0",
     "ipykernel>=7.3.0",
     "mlflow>=3.0.0",
     "pandas>=2.3.3",
