@@ -25,7 +25,8 @@ reflection_llm:
     api_base: http://localhost:8002/v1
 
 gepa_config:
-  auto: heavy
+  max_full_evals: 100
+gepa_num_threads: 16
 
 mlflow_tracking_host: localhost
 mlflow_tracking_port: 5000

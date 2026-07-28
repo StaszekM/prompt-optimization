@@ -34,7 +34,7 @@ def main():
     optimizer = dspy.GEPA(
         metric=metric,
         reflection_lm=reflection_lm,
-        num_threads=2,
+        num_threads=params["gepa_num_threads"],
         **params["gepa_config"],
     )
 
