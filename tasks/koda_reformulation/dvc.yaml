@@ -51,3 +51,9 @@ stages:
       - out/reform_bot_optimized.json
     outs:
       - out/eval_results_after.csv
+  move_mlflow_db:
+    cmd:
+      - mkdir -p out/mlflow 
+      - mv mlflow.db out/mlflow/mlflow.db
+    outs:
+      - out/mlflow/mlflow.db

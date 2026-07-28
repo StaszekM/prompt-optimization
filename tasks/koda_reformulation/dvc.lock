@@ -24,11 +24,11 @@ stages:
     outs:
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: ce8184213da949d233c4f8815fabc3e6
+      md5: 4facdd769dbd5f69bdc04451176c5c47
       size: 29181
     - path: out/reformulation_examples.pkl
       hash: md5
-      md5: 2b1cdece7793d7591ae076c43961e941
+      md5: b7b7f72b0b831e8cd86602c167e09524
       size: 320853
   evaluate:
     cmd: PYTHONPATH=../.. python -m evaluate --variant before
@@ -47,19 +47,19 @@ stages:
       size: 1838
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: ce8184213da949d233c4f8815fabc3e6
+      md5: 4facdd769dbd5f69bdc04451176c5c47
       size: 29181
     params:
       params.yaml:
         generator_llm.params:
-          model_name: gemma-4-31b-it
+          model_name: gemma-4-26B-A4B-it
           temperature: 0.5
           max_tokens: 8000
     outs:
     - path: out/eval_results_before.csv
       hash: md5
-      md5: 9c90abb0979597bb16bf4fded044108d
-      size: 46473
+      md5: 0f5d2ad58616e41b5f99e8ae6d517252
+      size: 46504
   run_optimization:
     cmd: PYTHONPATH=../.. python -m optimize
     deps:
@@ -77,29 +77,29 @@ stages:
       size: 1523
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: ce8184213da949d233c4f8815fabc3e6
+      md5: 4facdd769dbd5f69bdc04451176c5c47
       size: 29181
     - path: out/reformulation_examples.pkl
       hash: md5
-      md5: 2b1cdece7793d7591ae076c43961e941
+      md5: b7b7f72b0b831e8cd86602c167e09524
       size: 320853
     params:
       params.yaml:
         generator_llm.params:
-          model_name: gemma-4-31b-it
+          model_name: gemma-4-26B-A4B-it
           temperature: 0.5
           max_tokens: 8000
         gepa_config:
-          max_metric_calls: 10
+          auto: heavy
         reflection_llm.params:
-          model_name: gpt-4o
+          model_name: gpt-oss-120b
           temperature: 0.5
           max_tokens: 8000
     outs:
     - path: out/reform_bot_optimized.json
       hash: md5
-      md5: 875eba648f36d0d55849ca21737844b2
-      size: 942
+      md5: ffc7bc46d579a8527a93470a44110b62
+      size: 6222
   evaluate-after:
     cmd: PYTHONPATH=../.. python -m evaluate --variant after
     deps:
@@ -117,19 +117,28 @@ stages:
       size: 1838
     - path: out/reform_bot_optimized.json
       hash: md5
-      md5: 875eba648f36d0d55849ca21737844b2
-      size: 942
+      md5: ffc7bc46d579a8527a93470a44110b62
+      size: 6222
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: ce8184213da949d233c4f8815fabc3e6
+      md5: 4facdd769dbd5f69bdc04451176c5c47
       size: 29181
     outs:
     - path: out/eval_results_after.csv
       hash: md5
-      md5: 56383ef46af6eabc4726e33be66d5f3a
-      size: 46550
+      md5: 897beb8e7affbad90c17b8dd1ba70fb8
+      size: 46906
   setup_dvc_exp:
     cmd: python -c "from maybe_setup_mlflow import maybe_setup_mlflow"
   maybe_setup_dvc_exp:
     cmd: python -c "from maybe_setup_mlflow import maybe_setup_mlflow; 
       maybe_setup_mlflow()"
+  move_mlflow_db:
+    cmd:
+    - mkdir -p out/mlflow
+    - mv mlflow.db out/mlflow/mlflow.db
+    outs:
+    - path: out/mlflow/mlflow.db
+      hash: md5
+      md5: 10dcfd9a66ce94d892c7edb3e73ebf83
+      size: 74641408

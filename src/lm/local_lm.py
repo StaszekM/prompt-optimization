@@ -10,7 +10,7 @@ def create_local_lm(
     num_retries=5,
 ) -> dspy.LM:
     return dspy.LM(
-        f"openai/{model_name}",
+        f"hosted_vllm/{model_name}",
         num_retries=num_retries,
         api_base=api_base,
         model_type="chat",
