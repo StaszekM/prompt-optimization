@@ -3,27 +3,29 @@ examples_creator:
   test_size: 0.3
 
 generator_llm:
-  kind: clarin
+  kind: local
   params:
-    model_name: "gemma-4-31b-it"
+    model_name: "gemma-4-26B-A4B-it"
     temperature: 0.5
     max_tokens: 8000
   untracked_params:
     cache: false
     num_retries: 5
+    api_base: http://localhost:8001/v1
 
 reflection_llm:
-  kind: clarin
+  kind: local
   params:
-    model_name: "gpt-4o"
+    model_name: "gpt-oss-120b"
     temperature: 0.5
     max_tokens: 8000
   untracked_params:
     cache: false
     num_retries: 5
+    api_base: http://localhost:8002/v1
 
 gepa_config:
-  max_metric_calls: 10
+  auto: heavy
 
 mlflow_tracking_host: localhost
 mlflow_tracking_port: 5000
