@@ -58,8 +58,8 @@ stages:
     outs:
     - path: out/eval_results_before.csv
       hash: md5
-      md5: 0f5d2ad58616e41b5f99e8ae6d517252
-      size: 46504
+      md5: 2d378718ff0274bc5b8c447118c0914b
+      size: 46629
   run_optimization:
     cmd: PYTHONPATH=../.. python -m optimize
     deps:
@@ -73,8 +73,8 @@ stages:
       size: 110858
     - path: optimize.py
       hash: md5
-      md5: 4ddbf8b98d3d63b2ef53f27433a5fe4e
-      size: 1523
+      md5: adb47d6dc5859d274d666932bb6d8c24
+      size: 1548
     - path: out/reformulation_eval.pkl
       hash: md5
       md5: 4facdd769dbd5f69bdc04451176c5c47
@@ -90,7 +90,7 @@ stages:
           temperature: 0.5
           max_tokens: 8000
         gepa_config:
-          auto: heavy
+          max_full_evals: 100
         reflection_llm.params:
           model_name: gpt-oss-120b
           temperature: 0.5
@@ -98,8 +98,8 @@ stages:
     outs:
     - path: out/reform_bot_optimized.json
       hash: md5
-      md5: ffc7bc46d579a8527a93470a44110b62
-      size: 6222
+      md5: fd4b5ee414c02a32c2ca20436e2d0b99
+      size: 20047
   evaluate-after:
     cmd: PYTHONPATH=../.. python -m evaluate --variant after
     deps:
@@ -117,8 +117,8 @@ stages:
       size: 1838
     - path: out/reform_bot_optimized.json
       hash: md5
-      md5: ffc7bc46d579a8527a93470a44110b62
-      size: 6222
+      md5: fd4b5ee414c02a32c2ca20436e2d0b99
+      size: 20047
     - path: out/reformulation_eval.pkl
       hash: md5
       md5: 4facdd769dbd5f69bdc04451176c5c47
@@ -126,8 +126,8 @@ stages:
     outs:
     - path: out/eval_results_after.csv
       hash: md5
-      md5: 897beb8e7affbad90c17b8dd1ba70fb8
-      size: 46906
+      md5: 070f18208beea0a28d701f52f49d315d
+      size: 43978
   setup_dvc_exp:
     cmd: python -c "from maybe_setup_mlflow import maybe_setup_mlflow"
   maybe_setup_dvc_exp:
@@ -140,5 +140,5 @@ stages:
     outs:
     - path: out/mlflow/mlflow.db
       hash: md5
-      md5: 10dcfd9a66ce94d892c7edb3e73ebf83
-      size: 74641408
+      md5: 26039febf4f2e530a2821f24ca161e70
+      size: 1561473024
