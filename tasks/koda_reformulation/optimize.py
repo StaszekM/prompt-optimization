@@ -20,15 +20,9 @@ def list_splitter(list_to_split, ratio):
 
 def main():
     params = dvc.api.params_show("./params.yaml")
-    tracking_config = {
-        "generator_llm": params["generator_llm"],
-        "reflection_llm": params["reflection_llm"],
-        "gepa_config": params["gepa_config"],
-        "gepa_num_threads": params["gepa_num_threads"],
-    }
     with tracked_stage(
         "run_optimization",
-        params=tracking_config,
+        extra_params={"gepa_num_threads": params["gepa_num_threads"]},
         manage_wandb_run=False,
     ) as tracking:
         backbone_lm = create_lm_from_config(params["generator_llm"])

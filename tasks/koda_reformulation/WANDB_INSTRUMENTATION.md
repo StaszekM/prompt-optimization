@@ -142,6 +142,10 @@ The DVC stage name and `tracked_stage(...)` name must match.
 3. Wrap the stage body with `tracked_stage(...)`.
 4. Call `tracking.mark_succeeded(...)` only after DVC-owned outputs are written.
 
+Declared DVC params are discovered automatically from `dvc.yaml` with the stage
+name. Pass `extra_params` only for runtime context that DVC does not track, such
+as a CLI flag that selects a variant.
+
 Example `dvc.yaml` stage:
 
 ```yaml
@@ -161,14 +165,19 @@ stages:
 Example Python stage:
 
 ```python
+import dvc.api
+
 from wandb_tracking import tracked_stage
 
 
 def main() -> None:
-    params = {"some_param": 123}
+    params = dvc.api.params_show("./params.yaml")
 
-    with tracked_stage("my_stage", params=params) as tracking:
-        result = run_computation(params)
+    with tracked_stage(
+        "my_stage",
+        extra_params={"runtime_flag": "example"},
+    ) as tracking:
+        result = run_computation(params["my_stage"])
         write_dvc_owned_output(result, "out/my_stage_output.json")
 
         tracking.mark_succeeded(
@@ -185,7 +194,7 @@ only use this instrumentation to provide consistent run metadata:
 ```python
 with tracked_stage(
     "run_optimization",
-    params=tracking_config,
+    extra_params={"runtime_flag": "example"},
     manage_wandb_run=False,
 ) as tracking:
     use_wandb = tracking.can_external_wandb_start()
@@ -231,8 +240,10 @@ Sidecars include DVC-native fields so the metadata maps back to `dvc.yaml`:
 - `group`
 - `wandb_active`
 - `deps`
-- `params`
+- `params`: DVC-declared parameter values discovered for the stage.
+- `extra_params`
 - `param_declarations`
+- `params_error`
 - `outs`
 - `sidecar`
 - `timestamp`

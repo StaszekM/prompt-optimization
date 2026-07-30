@@ -55,10 +55,7 @@ if __name__ == "__main__":
         os.path.dirname(__file__), "out", "reformulation_eval.pkl"
     )
 
-    with tracked_stage(
-        "create_examples",
-        params=params,
-    ) as tracking:
+    with tracked_stage("create_examples") as tracking:
         df_train = pd.read_json(input_location_train, lines=True)
         df_eval = (
             pd.read_json(input_location_eval, lines=True)

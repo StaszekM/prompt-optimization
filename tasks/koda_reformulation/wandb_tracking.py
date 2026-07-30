@@ -37,12 +37,136 @@ def json_safe(value: Any) -> Any:
 
 
 def load_params() -> dict[str, Any]:
-    import dvc.api
+    try:
+        import dvc.api
 
-    params = dvc.api.params_show("./params.yaml")
+        params = dvc.api.params_show("./params.yaml")
+        if isinstance(params, dict):
+            return params
+    except Exception as e:  # noqa: BLE001
+        print("An error occurred when loading params: ", str(e))
+
+    params_path = Path("params.yaml")
+    if not params_path.exists():
+        return {}
+
+    loaded = yaml.safe_load(params_path.read_text())
+    return loaded if isinstance(loaded, dict) else {}
+
+
+_MISSING = object()
+
+
+def _read_param_file(path: str) -> dict[str, Any]:
+    param_path = Path(path)
+    if not param_path.exists():
+        return {}
+
+    if param_path.suffix == ".json":
+        loaded = json.loads(param_path.read_text())
+    else:
+        loaded = yaml.safe_load(param_path.read_text())
+
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def _get_nested_param(params: dict[str, Any], key: str) -> Any:
+    current: Any = params
+    for part in key.split("."):
+        if not isinstance(current, dict) or part not in current:
+            return _MISSING
+        current = current[part]
+    return current
+
+
+def _set_nested_param(params: dict[str, Any], key: str, value: Any) -> None:
+    current = params
+    parts = key.split(".")
+    for part in parts[:-1]:
+        next_value = current.get(part)
+        if not isinstance(next_value, dict):
+            next_value = {}
+            current[part] = next_value
+        current = next_value
+    current[parts[-1]] = value
+
+
+def _merge_nested_params(
+    destination: dict[str, Any],
+    source: dict[str, Any],
+) -> dict[str, Any]:
+    for key, value in source.items():
+        if isinstance(value, dict) and isinstance(destination.get(key), dict):
+            _merge_nested_params(destination[key], value)
+        else:
+            destination[key] = value
+    return destination
+
+
+def _fallback_stage_params(stage_name: str) -> dict[str, Any]:
+    stage_metadata = read_dvc_stage_metadata()
+    param_declarations = stage_metadata.get(stage_name, {}).get("params", [])
+    if not isinstance(param_declarations, list):
+        return {}
+
+    discovered_params: dict[str, Any] = {}
+    for declaration in param_declarations:
+        if isinstance(declaration, str):
+            source_path = "params.yaml"
+            keys: list[str] | None = [declaration]
+        elif isinstance(declaration, dict):
+            if not declaration:
+                continue
+            source_path, raw_keys = next(iter(declaration.items()))
+            if raw_keys is None:
+                keys = None
+            elif isinstance(raw_keys, str):
+                keys = [raw_keys]
+            elif isinstance(raw_keys, list):
+                keys = [str(key) for key in raw_keys]
+            else:
+                continue
+        else:
+            continue
+
+        source_params = _read_param_file(str(source_path))
+        if keys is None:
+            _merge_nested_params(discovered_params, source_params)
+            continue
+
+        for key in keys:
+            value = _get_nested_param(source_params, key)
+            if value is not _MISSING:
+                _set_nested_param(discovered_params, key, value)
+
+    return json_safe(discovered_params)
+
+
+def read_dvc_stage_params(stage_name: str) -> tuple[dict[str, Any], str | None]:
+    stage_metadata = read_dvc_stage_metadata().get(stage_name, {})
+    if not stage_metadata.get("params"):
+        return {}, None
+
+    try:
+        import dvc.api
+
+        params = dvc.api.params_show(
+            "./params.yaml",
+            stages=stage_name,
+            deps=True,
+        )
+    except Exception as exc:
+        return (
+            _fallback_stage_params(stage_name),
+            f"dvc.api.params_show failed; used params.yaml fallback: {exc}",
+        )
+
     if isinstance(params, dict):
-        return params
-    raise TypeError("Params is not a dict")
+        return json_safe(params), None
+    return (
+        _fallback_stage_params(stage_name),
+        f"Expected dict from dvc.api.params_show(), got {type(params).__name__}",
+    )
 
 
 def _dvc_path(value: Any) -> str | None:
@@ -261,10 +385,14 @@ class TrackedStage(AbstractContextManager["TrackedStage"]):
         stage_name: str,
         *,
         deps: list[Any] | None = None,
+        extra_params: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         outs: list[Any] | None = None,
         manage_wandb_run: bool = True,
     ) -> None:
+        if params is not None and extra_params is not None:
+            raise ValueError("Pass either params or extra_params, not both")
+
         stage_metadata = read_dvc_stage_metadata()
         if stage_name not in stage_metadata:
             raise ValueError(
@@ -274,7 +402,8 @@ class TrackedStage(AbstractContextManager["TrackedStage"]):
 
         self.stage_name = stage_name
         self.deps = deps if deps is not None else stage_metadata[stage_name]["deps"]
-        self.params = params or {}
+        self.params, self.params_error = read_dvc_stage_params(stage_name)
+        self.extra_params = extra_params if extra_params is not None else params or {}
         self.param_declarations = stage_metadata[stage_name]["params"]
         self.outs = outs if outs is not None else stage_metadata[stage_name]["outs"]
         self.sidecar_path = Path(stage_metadata[stage_name]["sidecar"])
@@ -295,6 +424,9 @@ class TrackedStage(AbstractContextManager["TrackedStage"]):
                 "pipeline_run_id": self.pipeline_run_id,
                 "deps": self.deps,
                 "params": self.params,
+                "extra_params": self.extra_params,
+                "param_declarations": self.param_declarations,
+                "params_error": self.params_error,
                 "outs": self.outs,
             },
             manage_wandb_run=manage_wandb_run,
@@ -353,7 +485,9 @@ class TrackedStage(AbstractContextManager["TrackedStage"]):
                 "wandb_active": self.active,
                 "deps": self.deps,
                 "params": self.params,
+                "extra_params": self.extra_params,
                 "param_declarations": self.param_declarations,
+                "params_error": self.params_error,
                 "outs": self.outs,
                 "sidecar": str(self.sidecar_path),
                 "timestamp": utc_now(),
@@ -381,6 +515,7 @@ def tracked_stage(
     stage_name: str,
     *,
     deps: list[Any] | None = None,
+    extra_params: dict[str, Any] | None = None,
     params: dict[str, Any] | None = None,
     outs: list[Any] | None = None,
     manage_wandb_run: bool = True,
@@ -388,6 +523,7 @@ def tracked_stage(
     return TrackedStage(
         stage_name,
         deps=deps,
+        extra_params=extra_params,
         params=params,
         outs=outs,
         manage_wandb_run=manage_wandb_run,
@@ -452,7 +588,10 @@ def read_stage_payloads(pipeline_id: str) -> dict[str, dict[str, Any]]:
                 "attempt_run_id": None,
                 "pipeline_run_id": pipeline_id,
                 "deps": metadata["deps"],
+                "params": {},
+                "extra_params": {},
                 "param_declarations": metadata["params"],
+                "params_error": None,
                 "outs": metadata["outs"],
                 "sidecar": metadata["sidecar"],
                 "timestamp": utc_now(),

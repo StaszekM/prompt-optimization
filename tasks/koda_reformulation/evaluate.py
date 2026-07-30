@@ -28,9 +28,8 @@ def main(variant: evaluation_variant):
     stage_name = "evaluate" if variant == "before" else "evaluate-after"
     with tracked_stage(
         stage_name,
-        params={
+        extra_params={
             "variant": variant,
-            "generator_llm": model_config,
         },
     ) as tracking:
         with open(examples_location, "rb") as f:
