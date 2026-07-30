@@ -131,15 +131,12 @@ echo "[INFO]: Both vLLM servers are ready"
 
 cd $WORKSPACE_ROOT/tasks/koda_reformulation
 
-setsid "$VIRTUAL_ENV/bin/mlflow" server --host $(yq '.mlflow_tracking_host' ./params.yaml ) --port $(yq '.mlflow_tracking_port' ./params.yaml ) --backend-store-uri sqlite:///mlflow.db --no-serve-artifacts > ~/prompt-optimization/mlflow.log 2>&1 &
-PID_MLFLOW=$!
-
 $VIRTUAL_ENV/bin/dvc remote modify --local minio access_key_id "$GLOBAL_MINIO_ACCESS_KEY_ID"
 $VIRTUAL_ENV/bin/dvc remote modify --local minio secret_access_key "$GLOBAL_MINIO_SECRET_ACCESS_KEY"
 
 $VIRTUAL_ENV/bin/dvc pull
 
-setsid "$VIRTUAL_ENV/bin/dvc" exp run -f &
+setsid "$VIRTUAL_ENV/bin/python" -m run_pipeline_with_wandb -- "$VIRTUAL_ENV/bin/dvc" exp run -f &
 PID_DVC=$!
 
 wait "$PID_DVC"
