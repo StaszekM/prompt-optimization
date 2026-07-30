@@ -7,9 +7,11 @@ stages:
       - data/convos.jsonl
       - data/rag_paraphrase_eval.jsonl
       - examples_creator.py
+      - wandb_tracking.py
     outs:
       - out/reformulation_examples.pkl
       - out/reformulation_eval.pkl
+      - .pipeline-meta/create_examples.json
     params:
       - params.yaml:
         - examples_creator.random_state
@@ -18,11 +20,13 @@ stages:
     cmd: PYTHONPATH=../.. python -m evaluate --variant before
     deps:
       - evaluate.py
+      - wandb_tracking.py
       - out/reformulation_eval.pkl
       - data/convos.jsonl
       - data/rag_paraphrase_eval.jsonl
     outs:
       - out/eval_results_before.csv
+      - .pipeline-meta/evaluate_before.json
     params:
       - params.yaml:
         - generator_llm.params
@@ -30,12 +34,14 @@ stages:
     cmd: PYTHONPATH=../.. python -m optimize
     deps:
       - optimize.py
+      - wandb_tracking.py
       - out/reformulation_examples.pkl
       - out/reformulation_eval.pkl
       - data/convos.jsonl
       - data/rag_paraphrase_eval.jsonl
     outs:
       - out/reform_bot_optimized.json
+      - .pipeline-meta/run_optimization.json
     params:
       - params.yaml:
         - generator_llm.params
@@ -45,15 +51,11 @@ stages:
     cmd: PYTHONPATH=../.. python -m evaluate --variant after
     deps:
       - evaluate.py
+      - wandb_tracking.py
       - out/reformulation_eval.pkl
       - data/convos.jsonl
       - data/rag_paraphrase_eval.jsonl
       - out/reform_bot_optimized.json
     outs:
       - out/eval_results_after.csv
-  move_mlflow_db:
-    cmd:
-      - mkdir -p out/mlflow 
-      - mv mlflow.db out/mlflow/mlflow.db
-    outs:
-      - out/mlflow/mlflow.db
+      - .pipeline-meta/evaluate_after.json

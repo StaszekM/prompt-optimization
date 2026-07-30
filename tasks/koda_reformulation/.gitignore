@@ -1,3 +1,5 @@
 docs/
+wandb/
+.pipeline-meta/
 mlruns/
 mlflow.db

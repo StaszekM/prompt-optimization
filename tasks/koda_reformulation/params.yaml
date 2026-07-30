@@ -1,32 +1,36 @@
 examples_creator:
-  random_state: 34
+  random_state: 341
   test_size: 0.3
 
 generator_llm:
-  kind: local
+  kind: clarin
   params:
-    model_name: "gemma-4-26B-A4B-it"
+    model_name: "gemma-4-31b-it"
     temperature: 0.5
     max_tokens: 8000
   untracked_params:
     cache: false
     num_retries: 5
-    api_base: http://localhost:8001/v1
 
 reflection_llm:
-  kind: local
+  kind: clarin
   params:
-    model_name: "gpt-oss-120b"
+    model_name: "or-deepseek-r1-0528"
     temperature: 0.5
     max_tokens: 8000
   untracked_params:
     cache: false
     num_retries: 5
-    api_base: http://localhost:8002/v1
 
 gepa_config:
-  max_full_evals: 100
+  max_full_evals: 3
 gepa_num_threads: 16
 
-mlflow_tracking_host: localhost
-mlflow_tracking_port: 5000
+wandb:
+  enabled: auto
+  project: koda-reformulation
+  entity: null
+  mode: online
+  tags:
+    - dvc
+    - koda_reformulation

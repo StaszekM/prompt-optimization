@@ -6,6 +6,7 @@ import dvc
 import dvc.api
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from wandb_tracking import tracked_stage
 
 
 def _normalize_role(role: str) -> str:
@@ -54,34 +55,41 @@ if __name__ == "__main__":
         os.path.dirname(__file__), "out", "reformulation_eval.pkl"
     )
 
-    eval_examples: list[Example] = []
+    with tracked_stage(
+        "create_examples",
+        params=params,
+    ) as tracking:
+        df_train = pd.read_json(input_location_train, lines=True)
+        df_eval = (
+            pd.read_json(input_location_eval, lines=True)
+            .assign(history=lambda df: df["history"].apply(ast.literal_eval))
+            .rename(columns={"gold_paraphrase": "reformulated question"})
+        )
 
-    df_train = pd.read_json(input_location_train, lines=True)
-    df_eval = (
-        pd.read_json(input_location_eval, lines=True)
-        .assign(history=lambda df: df["history"].apply(ast.literal_eval))
-        .rename(columns={"gold_paraphrase": "reformulated question"})
-    )
+        # df eval is so large that it would be beneficial to shrink it and extend training set
+        df_eval_subsample_training, df_eval_subsample_test = train_test_split(
+            df_eval, test_size=params["test_size"], random_state=params["random_state"]
+        )
 
-    # df eval is so large that it would be beneficial to shrink it and extend training set
-    df_eval_subsample_training, df_eval_subsample_test = train_test_split(
-        df_eval, test_size=params["test_size"], random_state=params["random_state"]
-    )
+        train_reader = list(df_train.iterrows()) + list(
+            df_eval_subsample_training.iterrows()
+        )
+        examples = to_examples(train_reader)
 
-    train_reader = list(df_train.iterrows()) + list(
-        df_eval_subsample_training.iterrows()
-    )
-    examples = to_examples(train_reader)
+        val_reader = list(df_eval_subsample_test.iterrows())
+        examples_val = to_examples(val_reader)
 
-    val_reader = list(df_eval_subsample_test.iterrows())
-    examples_val = to_examples(val_reader)
+        with open(output_location_train, "wb") as output_file:
+            pickle.dump(examples, output_file)
 
-    with open(output_location_train, "wb") as output_file:
-        pickle.dump(examples, output_file)
+        with open(output_location_eval, "wb") as output_file:
+            pickle.dump(examples_val, output_file)
 
-    with open(output_location_eval, "wb") as output_file:
-        pickle.dump(examples_val, output_file)
-
-    print(
-        f"Created {len(train_reader)} train examples and {len(val_reader)} val examples."
-    )
+        metrics = {
+            "examples/train_count": len(train_reader),
+            "examples/eval_count": len(val_reader),
+        }
+        tracking.mark_succeeded(metrics)
+        print(
+            f"Created {len(train_reader)} train examples and {len(val_reader)} val examples."
+        )

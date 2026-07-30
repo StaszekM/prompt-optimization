@@ -15,21 +15,29 @@ stages:
       size: 110858
     - path: examples_creator.py
       hash: md5
-      md5: e393bcea25305e77ef5d20a0c854a974
-      size: 2681
+      md5: b9223e5a8e2a59a6ce1b17638393c939
+      size: 3046
+    - path: wandb_tracking.py
+      hash: md5
+      md5: bb1d9c9b1926285ec2acef9407835ad4
+      size: 15189
     params:
       params.yaml:
-        examples_creator.random_state: 34
+        examples_creator.random_state: 341
         examples_creator.test_size: 0.3
     outs:
+    - path: .pipeline-meta/create_examples.json
+      hash: md5
+      md5: 11f8f9bb2206af56ff1eb3aa24224c32
+      size: 912
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: 4facdd769dbd5f69bdc04451176c5c47
-      size: 29181
+      md5: a72fb988e30706dc05060a26fb97e13c
+      size: 28083
     - path: out/reformulation_examples.pkl
       hash: md5
-      md5: b7b7f72b0b831e8cd86602c167e09524
-      size: 320853
+      md5: 5907bfa3ed50165ce5ff8293dfda7d37
+      size: 321951
   evaluate:
     cmd: PYTHONPATH=../.. python -m evaluate --variant before
     deps:
@@ -43,23 +51,31 @@ stages:
       size: 110858
     - path: evaluate.py
       hash: md5
-      md5: 32b9c6eacd3362f1bfac91e23bc5b695
-      size: 1838
+      md5: ffd3ada87e39091dd743e89000f2ba98
+      size: 2335
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: 4facdd769dbd5f69bdc04451176c5c47
-      size: 29181
+      md5: a72fb988e30706dc05060a26fb97e13c
+      size: 28083
+    - path: wandb_tracking.py
+      hash: md5
+      md5: bb1d9c9b1926285ec2acef9407835ad4
+      size: 15189
     params:
       params.yaml:
         generator_llm.params:
-          model_name: gemma-4-26B-A4B-it
+          model_name: gemma-4-31b-it
           temperature: 0.5
           max_tokens: 8000
     outs:
+    - path: .pipeline-meta/evaluate_before.json
+      hash: md5
+      md5: e29dd4664f978599db7f14bc94745ffa
+      size: 1065
     - path: out/eval_results_before.csv
       hash: md5
-      md5: 2d378718ff0274bc5b8c447118c0914b
-      size: 46629
+      md5: 8d679542681c57cfa2f5e9796723796a
+      size: 46118
   run_optimization:
     cmd: PYTHONPATH=../.. python -m optimize
     deps:
@@ -73,33 +89,41 @@ stages:
       size: 110858
     - path: optimize.py
       hash: md5
-      md5: adb47d6dc5859d274d666932bb6d8c24
-      size: 1548
+      md5: 74b578c9c6fd5a611543b590faf63d5f
+      size: 2425
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: 4facdd769dbd5f69bdc04451176c5c47
-      size: 29181
+      md5: a72fb988e30706dc05060a26fb97e13c
+      size: 28083
     - path: out/reformulation_examples.pkl
       hash: md5
-      md5: b7b7f72b0b831e8cd86602c167e09524
-      size: 320853
+      md5: 5907bfa3ed50165ce5ff8293dfda7d37
+      size: 321951
+    - path: wandb_tracking.py
+      hash: md5
+      md5: bb1d9c9b1926285ec2acef9407835ad4
+      size: 15189
     params:
       params.yaml:
         generator_llm.params:
-          model_name: gemma-4-26B-A4B-it
+          model_name: gemma-4-31b-it
           temperature: 0.5
           max_tokens: 8000
         gepa_config:
-          max_full_evals: 100
+          max_full_evals: 3
         reflection_llm.params:
-          model_name: gpt-oss-120b
+          model_name: or-deepseek-r1-0528
           temperature: 0.5
           max_tokens: 8000
     outs:
+    - path: .pipeline-meta/run_optimization.json
+      hash: md5
+      md5: 3803fcc2a74428d3e1a75b6b1d89cd6a
+      size: 1520
     - path: out/reform_bot_optimized.json
       hash: md5
-      md5: fd4b5ee414c02a32c2ca20436e2d0b99
-      size: 20047
+      md5: e33587044bc3c72609e7a871ba5875d9
+      size: 2659
   evaluate-after:
     cmd: PYTHONPATH=../.. python -m evaluate --variant after
     deps:
@@ -113,32 +137,26 @@ stages:
       size: 110858
     - path: evaluate.py
       hash: md5
-      md5: 32b9c6eacd3362f1bfac91e23bc5b695
-      size: 1838
+      md5: ffd3ada87e39091dd743e89000f2ba98
+      size: 2335
     - path: out/reform_bot_optimized.json
       hash: md5
-      md5: fd4b5ee414c02a32c2ca20436e2d0b99
-      size: 20047
+      md5: e33587044bc3c72609e7a871ba5875d9
+      size: 2659
     - path: out/reformulation_eval.pkl
       hash: md5
-      md5: 4facdd769dbd5f69bdc04451176c5c47
-      size: 29181
+      md5: a72fb988e30706dc05060a26fb97e13c
+      size: 28083
+    - path: wandb_tracking.py
+      hash: md5
+      md5: bb1d9c9b1926285ec2acef9407835ad4
+      size: 15189
     outs:
+    - path: .pipeline-meta/evaluate_after.json
+      hash: md5
+      md5: 674dbde68ae579fdc04c2852fff625aa
+      size: 1045
     - path: out/eval_results_after.csv
       hash: md5
-      md5: 070f18208beea0a28d701f52f49d315d
-      size: 43978
-  setup_dvc_exp:
-    cmd: python -c "from maybe_setup_mlflow import maybe_setup_mlflow"
-  maybe_setup_dvc_exp:
-    cmd: python -c "from maybe_setup_mlflow import maybe_setup_mlflow; 
-      maybe_setup_mlflow()"
-  move_mlflow_db:
-    cmd:
-    - mkdir -p out/mlflow
-    - mv mlflow.db out/mlflow/mlflow.db
-    outs:
-    - path: out/mlflow/mlflow.db
-      hash: md5
-      md5: 26039febf4f2e530a2821f24ca161e70
-      size: 1561473024
+      md5: 7154b9766f5e6cd78561338454b78aeb
+      size: 43558
